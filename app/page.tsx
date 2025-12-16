@@ -209,6 +209,38 @@ Keep it under 80 words.`
     }
   };
 
+  // 이미지 다운로드 헬퍼 함수
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('다운로드 실패:', error);
+      alert('이미지 다운로드에 실패했습니다.');
+    }
+  };
+
+  // 영상 소스 이미지 일괄 다운로드
+  const downloadAllVideoSourceImages = async () => {
+    if (videoSourceImages.length === 0) return alert('다운로드할 이미지가 없습니다!');
+    
+    setLoading(true);
+    for (let i = 0; i < videoSourceImages.length; i++) {
+      await downloadImage(videoSourceImages[i], `video-source-${i + 1}.png`);
+      await new Promise(resolve => setTimeout(resolve, 500)); // 다운로드 간 딜레이
+    }
+    setLoading(false);
+    alert(`${videoSourceImages.length}개의 이미지가 다운로드되었습니다!`);
+  };
+
   // 사진 구도 확장 이미지 생성
   const generateAngleImages = async () => {
     if (keyStatus !== "valid") return alert("먼저 API 키 확인을 완료해주세요!");
@@ -647,7 +679,16 @@ Keep it under 80 words.`
 
           {videoSourceImages.length > 0 && (
             <div className="mt-5 p-5 bg-green-950/40 border border-green-500/30 rounded-lg">
-              <p className="text-green-300 font-semibold mb-4">생성된 영상 소스 이미지 ({videoSourceImages.length}개):</p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-green-300 font-semibold">생성된 영상 소스 이미지 ({videoSourceImages.length}개):</p>
+                <button
+                  onClick={downloadAllVideoSourceImages}
+                  className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2"
+                >
+                  <Upload size={18}/>
+                  전체 다운로드
+                </button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {videoSourceImages.map((imgUrl, index) => (
                   <div key={index} className="relative group">
@@ -664,6 +705,12 @@ Keep it under 80 words.`
                     <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-white text-sm">
                       #{index + 1}
                     </div>
+                    <button
+                      onClick={() => downloadImage(imgUrl, `video-source-${index + 1}.png`)}
+                      className="absolute bottom-2 right-2 bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition opacity-0 group-hover:opacity-100"
+                    >
+                      다운로드
+                    </button>
                   </div>
                 ))}
               </div>
